@@ -7,9 +7,6 @@ import random
 #========external librarys========
 import paho.mqtt.client as mqtt
 
-import random
-import time
-
 #========definitions========#
 broker_address="172.104.234.24" #Linode Broker
 port = 1883
@@ -48,8 +45,8 @@ class Client():
         print(rc)
         if rc == 0:
             connectionStatus = "connected"
-            _running = True
-            return _running
+            '''_running = True
+            return _running'''
             
 
 class Application(tk.Tk):
@@ -113,7 +110,8 @@ def loop():
             #=======randomTempGen=======
             oldtime = time.time()
             TemperatureGenerator()
-
+            
+            #=======OnConnectionStatus=======
             app.labelConnectionStatus.config(text="You are " + str(connectionStatus))
 
             #=======TkinterIdleTask=======
@@ -121,7 +119,6 @@ def loop():
             
         app.after(10, app.update())
         
-
 
 def main():
     client.ReceiveMessage()
