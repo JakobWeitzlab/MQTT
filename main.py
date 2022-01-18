@@ -16,8 +16,9 @@ port = 1883
 topicHouseMainLight = "house/Light/main-light"
 topicTemperaturSensor = "house/temperature/sensor1"
 benutzer = "lukas"
-passwort = "lukass"
-connectionStatus = True
+passwort = "lukas"
+connectionStatus = "not connected"
+_running = True
 
 #========Queue========#
 q = Queue()
@@ -27,6 +28,7 @@ class Client():
     def __init__(self):
         self.client = mqtt.Client()
         self.client.username_pw_set(username = benutzer, password=passwort)
+        self.client.on_connect = self.on_connect
         self.client.connect(broker_address, port)
         self.client.subscribe(topicTemperaturSensor)
         self.client.loop_start()
@@ -41,6 +43,14 @@ class Client():
     def PublishMessage(self, topic, msgData):
         self.client.publish(topic = topic, payload = msgData)
 
+    def on_connect(self, client, userdata, flags, rc):
+        global connectionStatus
+        print(rc)
+        if rc == 0:
+            connectionStatus = "connected"
+            _running = True
+            return _running
+            
 
 class Application(tk.Tk):
     def __init__(self):
@@ -56,7 +66,7 @@ class Application(tk.Tk):
         self.labelConnection = ttk.Label(self, text='You are connected to MQTT Broker: ' + broker_address, font=("Arial", 10))
         self.labelConnection.pack()
 
-        self.labelConnectionStatus = ttk.Label(self, text="True")
+        self.labelConnectionStatus = ttk.Label(self, text="N/A")
         self.labelConnectionStatus.pack()
 
         self.labelSpacer = ttk.Label(self, text="===========================================")
@@ -85,15 +95,11 @@ def TemperatureGenerator():
     sensorWert = random.randrange(25,45)
     client.PublishMessage(topicTemperaturSensor, sensorWert)
     
-def on_connect(client, userdata, flags, rc):
-    print(rc)
-    if rc == 0:
-        connectionStatus = False
 
 def loop():
     oldtime = time.time()
     
-    while True:
+    while _running:
         while not q.empty():
             message = q.get()
             if message is None:
@@ -101,19 +107,20 @@ def loop():
             else:
                 app.labelReceivedMsgData.config(text="Sensor Reading: " + message.translate({98: None, 39: None}) + "°")
                                                                                             #Look up ASCII Table
+                
         # tasks every 5 seconds
         if time.time() >= oldtime + 5:
             #=======randomTempGen=======
             oldtime = time.time()
             TemperatureGenerator()
 
-            #=======CheckConnectionStatus=======
-            client.on_connect = on_connect
-            if connectionStatus == False:
-                app.labelConnectionStatus.config(text="False")
+            app.labelConnectionStatus.config(text="You are " + str(connectionStatus))
 
+            #=======TkinterIdleTask=======
+            #app.after(5000, app.update_idletasks())
+            
         app.after(10, app.update())
-        #app.after(5000, app.update_idletasks())
+        
 
 
 def main():
