@@ -1,5 +1,7 @@
 from tkinter import *
 import paho.mqtt.client as mqtt
+import random
+
 
 client = mqtt.Client()
 onmessage = False
@@ -31,6 +33,10 @@ class MainWindow:
 
         self.lightlabel = Label(text=" ", bg="#222233", padx=15, pady=15,)
 
+        self.tempbutton = Button(text="Temperatursensor", command=temperature)
+
+        self.tempbutton.grid(row=0, column=3)
+
         self.lightlabel.grid(row=1, column=3)
 
         self.SendButton.grid(row=2, column=1, pady=5)
@@ -42,6 +48,11 @@ class MainWindow:
         self.messageentry.grid(row=1, column=1)
 
         self.Listofmessage.grid(row=0, rowspan=4, column=2, padx=15, pady=20)
+
+
+def temperature():
+    rand = random.randrange(15, 39)
+    client.publish("house/temperature/sensor1", payload=rand)
 
 
 def updatemessage():
@@ -57,19 +68,19 @@ def on_message(client, userdata, msg):
     print(str(msg.payload.decode("utf-8")))
     msgtext = str(msg.payload.decode("utf-8"))
     msgtopic = msg.topic
-    if msgtext == "ON":
+    if msgtext == "on":
         light = True
-    if msgtext == "OFF":
+    if msgtext == "off":
         light = False
     onmessage = True
 
 
 client = mqtt.Client()
 client.username_pw_set("lukas", password="lukas")
-client.connect("127.0.0.1", 1883, 60)
+client.connect("172.104.234.24", 1883, 60)
 print("Connected succesful!")
 client.on_message = on_message
-client.subscribe("house/#")
+client.subscribe("#")
 client.loop_start()
 
 
